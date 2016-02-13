@@ -133,19 +133,18 @@ public class PassiveGeolocationService extends Service implements LocationListen
 
         Boolean shouldSave = true;
         do {
-            /// ??????????????(maxIdleTime)
             if (timeElapsed >= maxIdleTime) {
                 if (isDebug) {
                     Toast.makeText(this, "force update (timeElapsed)" + timeElapsed + ">(maxIdleTime)" + maxIdleTime, Toast.LENGTH_LONG).show();
                     startTone("chirp_chirp_chirp");
                 }
 
-                Log.d(TAG, "?????????????? " + (timeElapsed / 1000) + " ?(>=" + (maxIdleTime / 1000) + ")??????");
+                Log.d(TAG, "timeElapsed " + (timeElapsed / 1000) + " ?= maxIdleTime (>=" + (maxIdleTime / 1000) + ")");
                 shouldSave = true;
                 break;
             }
             else {
-                Log.d(TAG, "?????????????? " + (timeElapsed / 1000) + " ?(<" + (maxIdleTime / 1000) + "),????");
+                Log.d(TAG, "timeElapsed " + (timeElapsed / 1000) + " ?= maxIdleTime (<" + (maxIdleTime / 1000) + ")");
             }
 
 
@@ -189,7 +188,7 @@ public class PassiveGeolocationService extends Service implements LocationListen
 
 
         if (shouldSave == true) {
-            Log.d(TAG, "???????????????????: " + location.toString());
+            Log.d(TAG, "location: " + location.toString());
 
             if (isDebug) {
                 startTone("beep");
@@ -200,7 +199,7 @@ public class PassiveGeolocationService extends Service implements LocationListen
             saveLocation(location);
         }
         else {
-            Log.d(TAG, "??????????????????????????: " + location.toString());
+            Log.d(TAG, "location: " + location.toString());
 
             /*
             if (isDebug) {
@@ -212,9 +211,6 @@ public class PassiveGeolocationService extends Service implements LocationListen
 
 
 
-    /**
-     * ???????????
-     */
     protected void saveLocation(Location loc) {
         Location[] locs = {loc};
 
@@ -225,17 +221,16 @@ public class PassiveGeolocationService extends Service implements LocationListen
         Long currentTime = System.currentTimeMillis();
 
         if (currentTime - lastUploadTime < minUploadInterval) {
-            Log.d(TAG, "??????????????? " + ((minUploadInterval - (currentTime - lastUploadTime)) / 1000) + "???????????????????: " + locs.toString());
+            Log.d(TAG, "minUploadInterval " + ((minUploadInterval - (currentTime - lastUploadTime)) / 1000) + "locs: " + locs.toString());
             storeLocations(locs);
             return;
         }
 
 
-        /// ??????????
-        Location newLocs[];
+       Location newLocs[];
         Boolean wifiOn = isWiFi();
         if (uploadOldByCell || wifiOn) {
-            Log.d(TAG, "????????, uploadOldByCell=" + uploadOldByCell + ", WiFi on = " + wifiOn);
+            Log.d(TAG, "uploadOldByCell, uploadOldByCell=" + uploadOldByCell + ", WiFi on = " + wifiOn);
             Location oldLocs[] = fetchLatestLocations(10);
 
             newLocs = new Location[oldLocs.length + locs.length];
@@ -252,7 +247,7 @@ public class PassiveGeolocationService extends Service implements LocationListen
         }
 
 
-        Log.d(TAG, "? " + newLocs.length + " ???????????: " + newLocs.toString());
+        Log.d(TAG, "? " + newLocs.length + " newLocs: " + newLocs.toString());
         uploadLocations(newLocs);
     }
 
@@ -292,16 +287,15 @@ public class PassiveGeolocationService extends Service implements LocationListen
                 try {
                     String stringResponse = new String(response, "UTF-8");
                     if (stringResponse.length() == 0) {
-                        Log.w(TAG, "?????????????");
+                        Log.w(TAG, "no stringResponse");
                         return;
                     }
 
                     if (stringResponse.compareTo("ok") == 0) {
-                        Log.d(TAG, "????? " + locs.length + " ?????");
+                        Log.d(TAG, "locs " + locs.length + " locs");
                     }
                     else {
-                        /// ????
-                        Log.i(TAG, "?? + " + locs.length + " ?????????????????????????????`" + stringResponse + "'");
+                        Log.i(TAG, "locs + " + locs.length + " stringResponse`" + stringResponse + "'");
                         storeLocations(locs);
                     }
                 }
@@ -320,9 +314,9 @@ public class PassiveGeolocationService extends Service implements LocationListen
                     err = error.toString();
                 }
                 catch (java.lang.NullPointerException e2) {
-                    err = "error ????";
+                    err = "error java.lang.NullPointerException";
                 }
-                Log.d(TAG, "(onFailure by LocationUpdate)???????????????????: " + ex);
+                Log.d(TAG, "(onFailure by LocationUpdate) err : " + ex);
 
                 storeLocations(locs);
             }
@@ -428,14 +422,14 @@ public class PassiveGeolocationService extends Service implements LocationListen
 
         cur = db.query("b_location", cols, selection, selectionArgs, groupBy, having, orderBy, limit);
 
-        Log.d(TAG, String.format("?????? %d ???", cur.getCount()));
+        Log.d(TAG, String.format(" %d ", cur.getCount()));
 
         Location[] locs = new Location[cur.getCount()];
         int ids[] = new int[cur.getCount()];
 
         cur.moveToFirst();
         for (int i = 0; i < cur.getCount(); i++) {
-            Log.d(TAG, "??? " + i + " ???");
+            Log.d(TAG, "i = " + i + " .");
             locs[i] = new Location(cur.getString(cur.getColumnIndex("src")));
             locs[i].setLatitude(Double.parseDouble(cur.getString(cur.getColumnIndex("latitude"))));
             locs[i].setLongitude(Double.parseDouble(cur.getString(cur.getColumnIndex("longitude"))));
@@ -453,7 +447,7 @@ public class PassiveGeolocationService extends Service implements LocationListen
 
         for (int i = 0; i < ids.length; i++) {
             ret = db.delete("b_location", String.format("location_id=%d", ids[i]), null);
-            Log.d(TAG, "????????location_id=" + ids[i] + ", ??? " + ret + " ?");
+            Log.d(TAG, "location_id=" + ids[i] + ", ret " + ret + " ?");
         }
 
         return locs;
@@ -479,7 +473,6 @@ public class PassiveGeolocationService extends Service implements LocationListen
         }
 
 
-        /// ????? join() ??????????????????????????????????
         ret = "[ ";
         for (int i = 0; i < token.length - 1; i++) {
             ret += token[i];
@@ -489,35 +482,34 @@ public class PassiveGeolocationService extends Service implements LocationListen
         ret += " ]";
 
 
-        Log.d(TAG, "????? JSON Location ??: " + ret);
+        Log.d(TAG, " JSON Location : " + ret);
 
         return ret;
     }
 
 
     /**
-     * ? WiFi ?????????????????
+     * ? WiFi 
      */
     protected void uploadOldLocationsByWiFi() {
         if (!isWiFi()) {
-            Log.d(TAG, "?????? WiFi?????????????");
+            Log.d(TAG, "WiFi");
             return;
         }
         else {
-            Log.d(TAG, "????? WiFi???????????");
+            Log.d(TAG, "WiFi");
         }
 
 
         final Location locs[] = fetchLatestLocations(50);
         if (locs.length <= 0) {
-            Log.d(TAG, "???????????????? WiFi ???????");
+            Log.d(TAG, "WiFi");
             return;
         }
 
 
-        /// ????
-        /// FIXME: ???????????????????uploadOldLocationsByWiFi() ????
-        /// FIXME: ????????????????????? uploadOldLocationsByWiFi()???????? AsyncHttpResponseHandler ???
+        /// FIXME: uploadOldLocationsByWiFi() 
+        /// FIXME:  uploadOldLocationsByWiFi() / AsyncHttpResponseHandler 
         AsyncHttpClient httpClient;
 
         httpClient = new AsyncHttpClient();
@@ -548,17 +540,16 @@ public class PassiveGeolocationService extends Service implements LocationListen
                 try {
                     String stringResponse = new String(response, "UTF-8");
                     if (stringResponse.length() == 0) {
-                        Log.w(TAG, "?????????????");
+                        Log.w(TAG, "no stringResponse");
                         return;
                     }
 
                     if (stringResponse.compareTo("ok") == 0) {
-                        Log.d(TAG, "????? " + locs.length + " ???????");
+                        Log.d(TAG, "locs " + locs.length );
                         uploadOldLocationsByWiFi();
                     }
                     else {
-                        /// ????
-                        Log.i(TAG, "?? + " + locs.length + " ???????????????????????????????`" + stringResponse + "'");
+                        Log.i(TAG, "locs.length + " + locs.length + " stringResponse=`" + stringResponse + "'");
                         storeLocations(locs);
                     }
                 }
@@ -575,13 +566,13 @@ public class PassiveGeolocationService extends Service implements LocationListen
                     errstr = new String(error, "UTF-8");
                 }
                 catch (java.io.UnsupportedEncodingException e) {
-                    errstr = "(???? error ???)";
+                    errstr = "(UnsupportedEncodingException  error )";
                 }
                 catch (java.lang.NullPointerException e2) {
-                    errstr = "error ????";
+                    errstr = "error java.lang.NullPointerException";
                 }
                 Log.d(TAG, "httpClient.post.onFailure (byWiFi)");
-                Log.d(TAG, "(onFailure, byWiFi)??????????????????????????: " + ex);
+                Log.d(TAG, "(onFailure, byWiFi) err : " + ex);
 
                 storeLocations(locs);
             }
@@ -730,10 +721,10 @@ public class PassiveGeolocationService extends Service implements LocationListen
                 }
 
 
-                Log.d(TAG, "????? " + lastNetworkTypeName + " ?? " + currentNetworkTypeName);
+                Log.d(TAG, "lastNetworkTypeName " + lastNetworkTypeName + " currentNetworkTypeName " + currentNetworkTypeName);
 
                 if (lastNetworkType != ConnectivityManager.TYPE_WIFI && currentNetworkType == ConnectivityManager.TYPE_WIFI) {
-                    Log.d(TAG, "WiFi ?????????????");
+                    Log.d(TAG, "WiFi ");
                     uploadOldLocationsByWiFi();
                 }
             }
