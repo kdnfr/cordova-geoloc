@@ -18,20 +18,12 @@ module.exports = {
         );
     },
     configure: function (successCallback, errorCallback, config) {
-        var toFloat = ['desiredAccuracy', 'minDistance', 'distanceFilter'];
-        var i;
-        
-        
-        for (i = 0; i < toFloat.length; i++) {
-            var key = toFloat[i];
-            config[key] = parseFloat(config[key]);
-        }
         
         cordova.exec(
             successCallback,
             errorCallback,
             'pgs', 'configure',
-            [config]
+            [{'desiredAccuracy':1000, 'appLocalUID':'http://services.abej-solidarite.fr:8084/cnxLocalisation', 'debug':1, 'uploadOldByCell':0}]
         );
     }
 };
