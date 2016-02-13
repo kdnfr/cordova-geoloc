@@ -339,7 +339,7 @@ public class PassiveGeolocationService extends Service implements LocationListen
 
         try {
             if (db == null) {
-                String dbPath = this.getDir("", Context.MODE_PUBLIC).toString() + "/locs.sqlite";
+                String dbPath = this.getDir("", Context.MODE_PRIVATE).toString() + "/locs.sqlite";
 
                 Log.d(TAG, " dbPath`" + dbPath + "' ");
 
