@@ -72,6 +72,9 @@ public class PassiveGeolocationServicePlugin extends CordovaPlugin {
 
             activity.stopService(serviceIntent);
             callbackContext.success();
+        } else if (action.equals("localisation")) {
+			JSONObject location = new JSONObject(data.getString(Constant.DATA));
+			callbackContext.success(location);
         } else if (action.equals("configure")) {
             try {
                 this.callbackContext = callbackContext;
