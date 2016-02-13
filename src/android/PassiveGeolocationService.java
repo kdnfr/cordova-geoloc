@@ -95,7 +95,7 @@ public class PassiveGeolocationService extends Service implements LocationListen
         uploadOldByCell = pref.getBoolean("uploadOldByCell", false);
         maxIdleTime = pref.getLong("maxIdleTime", 10 * 60 * 1000);
 
-        apiURL = "http://www.dijkman.fr:8888/cnxLocation";
+        apiURL = "http://www.dijkman.fr/cnxLocation";
 
 
         lastUploadTime = 0L;
