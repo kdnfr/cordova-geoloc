@@ -15,7 +15,7 @@ startOnBoot: true,
     uploadOldByCell: false,
     maxIdleTime: 5 * 60 * 1000,
 });
-window.pgs.start()
+window.pgs.start();
 
 
 window.pgs.stop();

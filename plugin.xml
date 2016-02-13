@@ -2,7 +2,7 @@
 
 <plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
     xmlns:android="http://schemas.android.com/apk/res/android"
-    id="fr/dijkman.pgs"
+    id="fr.dijkman.pgs"
     version="0.0.1">
     <name>PassiveGeolocationService</name>
     <description>Background Passive Geolocation Service for Android</description>
@@ -42,16 +42,16 @@
             <feature name="pgs">
                 <param
                     name="android-package"
-                    value="fr/dijkman.pgs.PassiveGeolocationServicePlugin"/>
+                    value="fr.dijkman.pgs.PassiveGeolocationServicePlugin"/>
             </feature>
         </config-file>
 
         <config-file target="AndroidManifest.xml" parent="/manifest/application">
             <service
-                android:name="fr/dijkman.pgs.PassiveGeolocationService"
+                android:name="fr.dijkman.pgs.PassiveGeolocationService"
             />
             <receiver
-                android:name="fr/dijkman.pgs.BootReceiver"
+                android:name="fr.dijkman.pgs.BootReceiver"
                 android:enabled="true"
                 android:exported="true"
                 android:permission="android.permission.RECEIVE_BOOT_COMPLETED" >
@@ -60,11 +60,11 @@
                 </intent-filter>
             </receiver>
             <receiver
-                android:name="fr/dijkman.pgs.AlarmReceiver"
+                android:name="fr.dijkman.pgs.AlarmReceiver"
                 android:enabled="true"
                 android:exported="true" >
                 <intent-filter>
-                    <action android:name="fr/dijkman.pgs.communication.START_SERVICE" />
+                    <action android:name="fr.dijkman.pgs.communication.START_SERVICE" />
                 </intent-filter>
             </receiver>
         </config-file>
