@@ -1,4 +1,4 @@
-package com.greensea.pgs;
+package fr.dijkman.pgs;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -22,7 +22,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 
-import com.greensea.pgs.constant.Constant;
+import fr.dijkman.pgs.constant.Constant;
 
 
 public class PassiveGeolocationServicePlugin extends CordovaPlugin {
@@ -32,11 +32,11 @@ public class PassiveGeolocationServicePlugin extends CordovaPlugin {
     static SharedPreferences preferences;
     static SharedPreferences.Editor preferencesEditor;
     private Intent serviceIntent;
-    
+
     private CallbackContext callbackContext;
 
-    
-    
+
+
     private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -53,29 +53,29 @@ public class PassiveGeolocationServicePlugin extends CordovaPlugin {
 
         if (action.equals("start")) {
             Log.d(TAG, "Call `start` PassiveGeolocationService");
-            
+
             IntentFilter intentFilter = new IntentFilter(Constant.LOCATION_BROADCAST);
             context.registerReceiver(mMessageReceiver, intentFilter);
-            
+
             activity.startService(serviceIntent);
             callbackContext.success();
 
         } else if (action.equals("stop")) {
             Log.d(TAG, "Call `stop` PassiveGeolocationService");
-            
+
             try {
                 context.unregisterReceiver(mMessageReceiver);
             }
             catch (java.lang.IllegalArgumentException e) {
                 Log.d(TAG, "PassiveGeolocationService may not started: " + e.toString());
             }
-            
+
             activity.stopService(serviceIntent);
             callbackContext.success();
         } else if (action.equals("configure")) {
             try {
                 this.callbackContext = callbackContext;
-                
+
                 Log.d(TAG, "Call `configure` PassiveGeolocationService");
                 String jsonConfig = data.getString(0);
                 Log.d(TAG, "Reconfigure service with: " + jsonConfig);
@@ -113,7 +113,7 @@ public class PassiveGeolocationServicePlugin extends CordovaPlugin {
                     Boolean isDebug = config.getBoolean("debug");
                     preferencesEditor.putBoolean("debug", isDebug);
                 }
-                
+
                 if (config.has("minUploadInterval")) {
                     Long minUploadInterval = config.getLong("minUploadInterval");
                     preferencesEditor.putLong("minUploadInterval", minUploadInterval);
@@ -130,8 +130,8 @@ public class PassiveGeolocationServicePlugin extends CordovaPlugin {
                     Boolean uploadOldByCell = config.getBoolean("uploadOldByCell");
                     preferencesEditor.putBoolean("uploadOldByCell", uploadOldByCell);
                 }
-                
-                
+
+
                 preferencesEditor.commit();
             } catch (JSONException e) {
                 Log.w(TAG, "Invalig config object");
@@ -145,21 +145,21 @@ public class PassiveGeolocationServicePlugin extends CordovaPlugin {
 
         return true;
     }
-    
+
     private void handleMessage(Intent msg) {
         Bundle data = msg.getExtras();
 
         try {
             JSONObject location = new JSONObject(data.getString(Constant.DATA));
-            
+
             PluginResult result = new PluginResult(PluginResult.Status.OK, location);
             result.setKeepCallback(true);
             this.callbackContext.sendPluginResult(result);
-            
+
             Log.d(TAG, "Sending plugin result");
         } catch (JSONException e) {
             Log.w(TAG, "Error converting message to json");
         }
-        
+
     }
 }

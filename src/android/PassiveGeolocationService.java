@@ -1,4 +1,4 @@
-package com.greensea.pgs;
+package fr.dijkman.pgs;
 
 import org.json.*;
 import java.util.*;
@@ -37,7 +37,7 @@ import com.loopj.android.http.*;
 import org.apache.http.Header;
 
 
-import com.greensea.pgs.constant.Constant;
+import fr.dijkman.pgs.constant.Constant;
 
 
 public class PassiveGeolocationService extends Service implements LocationListener {
@@ -46,7 +46,7 @@ public class PassiveGeolocationService extends Service implements LocationListen
     static final String PREFS_NAME = "PassiveGeolocationService";
 
     protected ToneGenerator toneGenerator;
-    
+
     Boolean isDebug;
     Long minTime;
     Float minDistance;
@@ -58,7 +58,7 @@ public class PassiveGeolocationService extends Service implements LocationListen
     Boolean uploadOldByCell;
     Long maxIdleTime;
     String apiURL;
-    
+
 
     Location lastLocation = null;
 
@@ -69,7 +69,7 @@ public class PassiveGeolocationService extends Service implements LocationListen
 
     SharedPreferences pref;
     LocationManager locationManager;
-    
+
     static SQLiteDatabase db = null;
 
 
@@ -77,12 +77,12 @@ public class PassiveGeolocationService extends Service implements LocationListen
 
 
     @Override
-    public void onCreate() {      
+    public void onCreate() {
         toneGenerator = new ToneGenerator(AudioManager.STREAM_NOTIFICATION, 100);
-                
-                
+
+
         BootReceiver.startAlarm(this);
-        
+
         pref = this.getSharedPreferences(PREFS_NAME, 0 | Context.MODE_MULTI_PROCESS);
 
         minTime = pref.getLong("minTime", 0);
@@ -94,114 +94,114 @@ public class PassiveGeolocationService extends Service implements LocationListen
         appLocalUID = pref.getString("appLocalUID", "");
         uploadOldByCell = pref.getBoolean("uploadOldByCell", false);
         maxIdleTime = pref.getLong("maxIdleTime", 10 * 60 * 1000);
-        
+
         apiURL = "http://www.dijkman.fr:8888/cnxLocation";
-    
-        
-        lastUploadTime = 0L; 
-        
-        
-        IntentFilter filter = new IntentFilter(); 
+
+
+        lastUploadTime = 0L;
+
+
+        IntentFilter filter = new IntentFilter();
         filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
         registerReceiver(mNetworkChangedReceiver, filter);
-        
-        
+
+
         Log.i(TAG, "onCreate,  desiredAccuracy=" + desiredAccuracy + ", minDistance=" + minDistance + ", minTime=" + minTime + ", distanceFilter=" + distanceFilter + ", isDebug=" + isDebug);
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        
+
         // Android before JellyBean may ignore minTime and minDistance
         locationManager.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER, minTime, minDistance, this);
     }
 
-    public void locationHandler(Location location) {        
+    public void locationHandler(Location location) {
         Log.d(TAG, "locationHandler fired, location=" + location + ", lastLocation=" + lastLocation);
 
-        
+
         final long locationTime = location.getTime();
         final double longitude = location.getLongitude();
         final double latitude = location.getLatitude();
         final float accuracy = location.getAccuracy();
-        
-        
+
+
         Long currentTime = location.getTime();
         Long lastTime = 0L;
         if (lastLocation != null) {
             lastTime = lastLocation.getTime();
         }
         Long timeElapsed = currentTime - lastTime;
-        
-        
+
+
         Boolean shouldSave = true;
         do {
-            /// 是否至少应该上报一次位置了？(maxIdleTime)
+            /// ??????????????(maxIdleTime)
             if (timeElapsed >= maxIdleTime) {
                 if (isDebug) {
                     Toast.makeText(this, "force update (timeElapsed)" + timeElapsed + ">(maxIdleTime)" + maxIdleTime, Toast.LENGTH_LONG).show();
                     startTone("chirp_chirp_chirp");
                 }
-                
-                Log.d(TAG, "本次定位距离上次定位已经过去 " + (timeElapsed / 1000) + " 秒(>=" + (maxIdleTime / 1000) + ")，应进行定位");
+
+                Log.d(TAG, "?????????????? " + (timeElapsed / 1000) + " ?(>=" + (maxIdleTime / 1000) + ")??????");
                 shouldSave = true;
                 break;
             }
             else {
-                Log.d(TAG, "本次定位距离上次定位已经过去 " + (timeElapsed / 1000) + " 秒(<" + (maxIdleTime / 1000) + "),继续判断");
+                Log.d(TAG, "?????????????? " + (timeElapsed / 1000) + " ?(<" + (maxIdleTime / 1000) + "),????");
             }
-            
-            
+
+
             /// Is accuracy < desiredAccuracy
             if (desiredAccuracy > 0 && accuracy > desiredAccuracy) {
                 if (isDebug) {
                     Toast.makeText(this, "no acy, (loc)" + accuracy + ">(desired)" + desiredAccuracy, Toast.LENGTH_LONG).show();
                     startTone("doodly_doo");
                 }
-                
+
                 Log.d(TAG, "locationHandler, reject by desiredAccuracy: (loc)" + accuracy + ">(desired)" + desiredAccuracy);
-                
+
                 shouldSave = false;
                 break;
             }
-            
-            
-            
-            /// Is distance > distanceFilter            
+
+
+
+            /// Is distance > distanceFilter
             if (lastLocation != null) {
                 float distance = lastLocation.distanceTo(location);
                 float lastAccuracy = lastLocation.getAccuracy();
-                
+
                 Log.d(TAG, "locationHandler, distance to lastLocation is " + distance);
-                
+
                 if (distance <= distanceFilter) {
                     if (isDebug) {
                         Toast.makeText(this, "dis filter, (loc)" + distance + "<=(filter)" + distanceFilter + ", // (loc acy)" + accuracy + ">=(last acy)" + lastAccuracy, Toast.LENGTH_LONG).show();
                         startTone("long_beep");
                     }
-                    
+
                     Log.d(TAG, "locationHandler, reject by distanceFilter: (loc)" + distance + "<=(filter)" + distanceFilter + ", // (loc acy)" + accuracy + ">=(last acy)" + lastAccuracy);
-                    
+
                     shouldSave = false;
                     break;
                 }
             }
         }
         while (false);
-        
-        
+
+
 
         if (shouldSave == true) {
-            Log.d(TAG, "根据一系列判断的结果，该位置应该被记录: " + location.toString());
-            
+            Log.d(TAG, "???????????????????: " + location.toString());
+
             if (isDebug) {
                 startTone("beep");
                 Toast.makeText(this, "located: acy=" + accuracy + ", lat=" + latitude + ", log=" + longitude, Toast.LENGTH_LONG).show();
             }
-            
+
             lastLocation = location;
             saveLocation(location);
         }
         else {
-            Log.d(TAG, "根据一系列判断的结果，该位置不应该被记录，抛弃该记录: " + location.toString());
-            
+            Log.d(TAG, "??????????????????????????: " + location.toString());
+
             /*
             if (isDebug) {
                 startTone("long_beep");
@@ -213,36 +213,36 @@ public class PassiveGeolocationService extends Service implements LocationListen
 
 
     /**
-     * 将位置信息上传到服务器
+     * ???????????
      */
     protected void saveLocation(Location loc) {
         Location[] locs = {loc};
-        
+
         saveLocations(locs);
     }
-     
+
     protected void saveLocations(Location[] locs) {
         Long currentTime = System.currentTimeMillis();
-        
+
         if (currentTime - lastUploadTime < minUploadInterval) {
-            Log.d(TAG, "尚未达到最小上传间隔限制（剩余 " + ((minUploadInterval - (currentTime - lastUploadTime)) / 1000) + "秒），本次位置暂不上传，保存到数据库中: " + locs.toString());
+            Log.d(TAG, "??????????????? " + ((minUploadInterval - (currentTime - lastUploadTime)) / 1000) + "???????????????????: " + locs.toString());
             storeLocations(locs);
             return;
         }
-        
-        
-        /// 判断是否要上传旧位置
+
+
+        /// ??????????
         Location newLocs[];
         Boolean wifiOn = isWiFi();
         if (uploadOldByCell || wifiOn) {
-            Log.d(TAG, "顺便上传旧的位置, uploadOldByCell=" + uploadOldByCell + ", WiFi on = " + wifiOn);
+            Log.d(TAG, "????????, uploadOldByCell=" + uploadOldByCell + ", WiFi on = " + wifiOn);
             Location oldLocs[] = fetchLatestLocations(10);
-            
+
             newLocs = new Location[oldLocs.length + locs.length];
             for (int i = 0; i < oldLocs.length; i++) {
                 newLocs[i] = oldLocs[i];
             };
-            
+
             for (int i = oldLocs.length, k = 0; i < oldLocs.length + locs.length; i++, k++) {
                 newLocs[i] = locs[k];
             }
@@ -250,32 +250,32 @@ public class PassiveGeolocationService extends Service implements LocationListen
         else {
             newLocs = locs;
         }
-            
-        
-        Log.d(TAG, "将 " + newLocs.length + " 个位置信息上传到服务器: " + newLocs.toString());
+
+
+        Log.d(TAG, "? " + newLocs.length + " ???????????: " + newLocs.toString());
         uploadLocations(newLocs);
     }
-    
-    
-    
-    
+
+
+
+
     protected void uploadLocations(final Location[] locs) {
         AsyncHttpClient httpClient;
-        
+
         httpClient = new AsyncHttpClient();
         httpClient.setMaxRetriesAndTimeout(1, 30 * 1000);
         httpClient.setTimeout(30 * 1000);
-        
-        
-        
+
+
+
         RequestParams params = new RequestParams();
         params.put("locations", locs2JSONStr(locs));
-        
+
         final String requestMsg = String.format(
             "http request url: %s, with params: %s",
             apiURL, params.toString()
         );
-        
+
         lastUploadTime = System.currentTimeMillis();
 
         httpClient.post(apiURL, params, new AsyncHttpResponseHandler() {
@@ -287,21 +287,21 @@ public class PassiveGeolocationService extends Service implements LocationListen
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] response) {
                 Log.d(TAG, "httpClient.post.onSuccess");
-                
-                
+
+
                 try {
                     String stringResponse = new String(response, "UTF-8");
                     if (stringResponse.length() == 0) {
-                        Log.w(TAG, "服务器返回了空内容，忽略之");
+                        Log.w(TAG, "?????????????");
                         return;
                     }
-                    
+
                     if (stringResponse.compareTo("ok") == 0) {
-                        Log.d(TAG, "成功上传了 " + locs.length + " 个位置信息");
+                        Log.d(TAG, "????? " + locs.length + " ?????");
                     }
                     else {
-                        /// 操作失败
-                        Log.i(TAG, "上传 + " + locs.length + " 个位置到服务器失败，保存位置信息到本地数据库，服务器返回：`" + stringResponse + "'");
+                        /// ????
+                        Log.i(TAG, "?? + " + locs.length + " ?????????????????????????????`" + stringResponse + "'");
                         storeLocations(locs);
                     }
                 }
@@ -320,10 +320,10 @@ public class PassiveGeolocationService extends Service implements LocationListen
                     err = error.toString();
                 }
                 catch (java.lang.NullPointerException e2) {
-                    err = "error 内容为空";
+                    err = "error ????";
                 }
-                Log.d(TAG, "(onFailure by LocationUpdate)上传位置失败，将位置信息保存到数据库中: " + ex);
-                
+                Log.d(TAG, "(onFailure by LocationUpdate)???????????????????: " + ex);
+
                 storeLocations(locs);
             }
 
@@ -333,17 +333,17 @@ public class PassiveGeolocationService extends Service implements LocationListen
             }
         });
     }
-    
-    
+
+
     protected SQLiteDatabase getDB() {
-        
+
         try {
             if (db == null) {
                 String dbPath = this.getDir("", Context.MODE_PUBLIC).toString() + "/locs.sqlite";
-                
+
                 Log.d(TAG, " dbPath`" + dbPath + "' ");
-                
-                db = SQLiteDatabase.openOrCreateDatabase(dbPath, null); 
+
+                db = SQLiteDatabase.openOrCreateDatabase(dbPath, null);
                 db.execSQL("CREATE TABLE IF NOT EXISTS `b_location` (" +
         "`location_id`	INTEGER PRIMARY KEY AUTOINCREMENT," +
         "`latitude`	TEXT," +
@@ -352,8 +352,8 @@ public class PassiveGeolocationService extends Service implements LocationListen
         "`accuracy`	TEXT," +
         "`rtime`	BIGINT," +
         "`ctime`	BIGINT, " +
-        "`src`	TEXT " + 
-    ");  " + 
+        "`src`	TEXT " +
+    ");  " +
     "CREATE INDEX idx_b_location_rtime IF NOT EXISTS ON b_location(rtime); "
                 );
             }
@@ -361,21 +361,21 @@ public class PassiveGeolocationService extends Service implements LocationListen
         catch (java.lang.IllegalStateException e) {
             Log.w(TAG, "IllegalStateException: " + e);
         }
-        
-        
-        
+
+
+
         return db;
     }
-    
-    
-    
+
+
+
     protected void storeLocations(Location[] locs) {
         long ret;
-        
+
         for (int i = 0; i < locs.length; i++) {
             ContentValues data = loc2ContentValues(locs[i]);
             data.put("ctime", System.currentTimeMillis());
-            
+
             ret = getDB().insertOrThrow("b_location", null, data);
             if (ret == -1) {
                 Log.i(TAG, "b_location: " + locs[i].toString());
@@ -384,40 +384,40 @@ public class PassiveGeolocationService extends Service implements LocationListen
                 Log.i(TAG, "b_location " + ret + " : " + locs[i].toString());
             }
         }
-        
+
         Log.i(TAG, locs.length + " locs");
     }
-    
-    
-    
+
+
+
     protected ContentValues loc2ContentValues(Location loc) {
         ContentValues ret = new ContentValues();
-        
+
         Double latitude = loc.getLatitude();
         Double longitude = loc.getLongitude();
         Double altitude = loc.getAltitude();
         Float accuracy = loc.getAccuracy();
-        
-        
-        
+
+
+
         ret.put("latitude", latitude.toString());
         ret.put("longitude", longitude.toString());
         ret.put("altitude", altitude.toString());
         ret.put("accuracy", accuracy.toString());
         ret.put("rtime", loc.getTime());
         ret.put("src", loc.getProvider());
-        
+
         return ret;
     }
-    
-    
+
+
     protected Location[] fetchLatestLocations(int num) {
         Cursor cur;
         SQLiteDatabase db;
         int ret;
-        
+
         db = getDB();
-        
+
         String cols[] = {"location_id", "latitude", "longitude", "altitude", "accuracy", "rtime", "src"};
         String selection = null;
         String selectionArgs[] = null;
@@ -425,61 +425,61 @@ public class PassiveGeolocationService extends Service implements LocationListen
         String having = null;
         String orderBy = "rtime DESC";
         String limit = String.format("%d", num);
-        
+
         cur = db.query("b_location", cols, selection, selectionArgs, groupBy, having, orderBy, limit);
-        
-        Log.d(TAG, String.format("从数据库中取 %d 个记录", cur.getCount()));
-        
+
+        Log.d(TAG, String.format("?????? %d ???", cur.getCount()));
+
         Location[] locs = new Location[cur.getCount()];
         int ids[] = new int[cur.getCount()];
-        
+
         cur.moveToFirst();
         for (int i = 0; i < cur.getCount(); i++) {
-            Log.d(TAG, "读取第 " + i + " 条记录");
+            Log.d(TAG, "??? " + i + " ???");
             locs[i] = new Location(cur.getString(cur.getColumnIndex("src")));
             locs[i].setLatitude(Double.parseDouble(cur.getString(cur.getColumnIndex("latitude"))));
             locs[i].setLongitude(Double.parseDouble(cur.getString(cur.getColumnIndex("longitude"))));
             locs[i].setAltitude(Double.parseDouble(cur.getString(cur.getColumnIndex("altitude"))));
             locs[i].setAccuracy(Float.parseFloat(cur.getString(cur.getColumnIndex("accuracy"))));
             locs[i].setTime(cur.getLong(cur.getColumnIndex("rtime")));
-            
+
             ids[i] = cur.getInt(cur.getColumnIndex("location_id"));
-            
+
             cur.moveToNext();
         }
-        
+
         cur.close();
-        
-        
+
+
         for (int i = 0; i < ids.length; i++) {
             ret = db.delete("b_location", String.format("location_id=%d", ids[i]), null);
-            Log.d(TAG, "数据库删除结果，location_id=" + ids[i] + ", 影响了 " + ret + " 行");
+            Log.d(TAG, "????????location_id=" + ids[i] + ", ??? " + ret + " ?");
         }
-        
+
         return locs;
     }
-    
-    
-    
+
+
+
     protected String locs2JSONStr(Location[] locs) {
         String ret;
-        
+
         if (locs.length <= 0) {
             return "[]";
         }
-        
+
         String token[] = new String[locs.length];
         for (int i = 0; i < locs.length; i++) {
             Double latitude = locs[i].getLatitude();
             Double longitude = locs[i].getLongitude();
             Double altitude = locs[i].getAltitude();
             Float accuracy = locs[i].getAccuracy();
-            
+
             token[i] = String.format("{\"latitude\": \"%s\", \"longitude\": \"%s\", \"altitude\": \"%s\", \"accuracy\": \"%s\", \"src\": \"%s\", \"time\": %d}", latitude.toString(), longitude.toString(), altitude.toString(), accuracy.toString(), locs[i].getProvider(), locs[i].getTime());
         }
-        
-        
-        /// 妈蛋！连个 join() 方法都没有，还要自己造一个（如果是我孤陋寡闻的话请把这段代码改掉吧）
+
+
+        /// ????? join() ??????????????????????????????????
         ret = "[ ";
         for (int i = 0; i < token.length - 1; i++) {
             ret += token[i];
@@ -487,53 +487,53 @@ public class PassiveGeolocationService extends Service implements LocationListen
         }
         ret += token[token.length - 1];
         ret += " ]";
-        
 
-        Log.d(TAG, "格式化后的 JSON Location 字串: " + ret);
-        
+
+        Log.d(TAG, "????? JSON Location ??: " + ret);
+
         return ret;
     }
-    
-    
+
+
     /**
-     * 当 WiFi 可用时，调用此方法上传旧的位置信息
+     * ? WiFi ?????????????????
      */
     protected void uploadOldLocationsByWiFi() {
         if (!isWiFi()) {
-            Log.d(TAG, "当前网络不是 WiFi，停止上传旧位置信息的操作");
+            Log.d(TAG, "?????? WiFi?????????????");
             return;
         }
         else {
-            Log.d(TAG, "当前网络是 WiFi，可以上传旧的位置信息");
+            Log.d(TAG, "????? WiFi???????????");
         }
-        
-        
+
+
         final Location locs[] = fetchLatestLocations(50);
         if (locs.length <= 0) {
-            Log.d(TAG, "数据库中没有旧的数据了，停止通过 WiFi 上传旧位置信息");
+            Log.d(TAG, "???????????????? WiFi ???????");
             return;
         }
-        
-        
-        /// 开始上传
-        /// FIXME: 我们需要加一个锁：同一时刻只能有一个　uploadOldLocationsByWiFi() 在运行。
-        /// FIXME: 这是为了防止网络状态频繁变化而导致启动多次 uploadOldLocationsByWiFi()，造成后台有多个 AsyncHttpResponseHandler 在运行
+
+
+        /// ????
+        /// FIXME: ???????????????????uploadOldLocationsByWiFi() ????
+        /// FIXME: ????????????????????? uploadOldLocationsByWiFi()???????? AsyncHttpResponseHandler ???
         AsyncHttpClient httpClient;
-        
+
         httpClient = new AsyncHttpClient();
         httpClient.setMaxRetriesAndTimeout(1, 30 * 1000);
         httpClient.setConnectTimeout(30 * 1000);
-        
-        
-        
+
+
+
         RequestParams params = new RequestParams();
         params.put("locations", locs2JSONStr(locs));
-        
+
         final String requestMsg = String.format(
             "http request url: %s, with params: %s",
             apiURL, params.toString()
         );
-    
+
         httpClient.post(apiURL, params, new AsyncHttpResponseHandler() {
             @Override
             public void onStart() {
@@ -543,22 +543,22 @@ public class PassiveGeolocationService extends Service implements LocationListen
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] response) {
                 Log.d(TAG, "httpClient.post.onSuccess");
-                
-                
+
+
                 try {
                     String stringResponse = new String(response, "UTF-8");
                     if (stringResponse.length() == 0) {
-                        Log.w(TAG, "服务器返回了空内容，忽略之");
+                        Log.w(TAG, "?????????????");
                         return;
                     }
-                    
+
                     if (stringResponse.compareTo("ok") == 0) {
-                        Log.d(TAG, "成功上传了 " + locs.length + " 个旧的位置信息");
+                        Log.d(TAG, "????? " + locs.length + " ???????");
                         uploadOldLocationsByWiFi();
                     }
                     else {
-                        /// 操作失败
-                        Log.i(TAG, "上传 + " + locs.length + " 个旧的位置到服务器失败，保存位置信息到本地数据库，服务器返回：`" + stringResponse + "'");
+                        /// ????
+                        Log.i(TAG, "?? + " + locs.length + " ???????????????????????????????`" + stringResponse + "'");
                         storeLocations(locs);
                     }
                 }
@@ -575,14 +575,14 @@ public class PassiveGeolocationService extends Service implements LocationListen
                     errstr = new String(error, "UTF-8");
                 }
                 catch (java.io.UnsupportedEncodingException e) {
-                    errstr = "(无法解析 error 的内容)";
+                    errstr = "(???? error ???)";
                 }
                 catch (java.lang.NullPointerException e2) {
-                    errstr = "error 内容为空";
+                    errstr = "error ????";
                 }
                 Log.d(TAG, "httpClient.post.onFailure (byWiFi)");
-                Log.d(TAG, "(onFailure, byWiFi)上传旧的位置失败，将位置信息保存到数据库中，错误信息: " + ex);
-                
+                Log.d(TAG, "(onFailure, byWiFi)??????????????????????????: " + ex);
+
                 storeLocations(locs);
             }
 
@@ -591,10 +591,10 @@ public class PassiveGeolocationService extends Service implements LocationListen
                 Log.w(TAG, "httpClient.post.onRetry, http request url: " + requestMsg);
             }
         });
-    
+
 
     }
-    
+
 
 
 	public static JSONObject toJSONObject(Location location) throws JSONException {
@@ -620,7 +620,7 @@ public class PassiveGeolocationService extends Service implements LocationListen
             return false;
         }
     }
-    
+
 
     private static boolean isWifi(Context mContext) {
 		ConnectivityManager connectivityManager = (ConnectivityManager) mContext
@@ -675,16 +675,16 @@ public class PassiveGeolocationService extends Service implements LocationListen
     @Override
     public void onDestroy() {
         Log.d(TAG, "onDestroy");
-        
+
         if (db != null) {
             //db.close();
             //db = null;
         }
-        
+
         unregisterReceiver(mNetworkChangedReceiver);
-        
+
         locationManager.removeUpdates(this);
-        
+
         super.onDestroy();
     }
 
@@ -705,19 +705,19 @@ public class PassiveGeolocationService extends Service implements LocationListen
             provider, status, extras)
         );
     }
-    
-    
+
+
     private BroadcastReceiver mNetworkChangedReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             ConnectivityManager connectivityManager;
             NetworkInfo info;
             String action = intent.getAction();
-            
+
             if (action.equals(ConnectivityManager.CONNECTIVITY_ACTION)) {
                 connectivityManager = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
-                info = connectivityManager.getActiveNetworkInfo();  
-                
+                info = connectivityManager.getActiveNetworkInfo();
+
                 lastNetworkType = currentNetworkType;
                 lastNetworkTypeName = currentNetworkTypeName;
                 if (info == null) {
@@ -728,12 +728,12 @@ public class PassiveGeolocationService extends Service implements LocationListen
                     currentNetworkType = info.getType();
                     currentNetworkTypeName = info.getTypeName();
                 }
-                
-                
-                Log.d(TAG, "网络连接从 " + lastNetworkTypeName + " 变为 " + currentNetworkTypeName);
-                
+
+
+                Log.d(TAG, "????? " + lastNetworkTypeName + " ?? " + currentNetworkTypeName);
+
                 if (lastNetworkType != ConnectivityManager.TYPE_WIFI && currentNetworkType == ConnectivityManager.TYPE_WIFI) {
-                    Log.d(TAG, "WiFi 可用，开始上传旧的位置信息");
+                    Log.d(TAG, "WiFi ?????????????");
                     uploadOldLocationsByWiFi();
                 }
             }

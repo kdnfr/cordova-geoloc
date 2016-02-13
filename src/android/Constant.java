@@ -1,8 +1,8 @@
-package com.greensea.pgs.constant;
+package fr.dijkman.pgs.constant;
 
 public abstract class Constant
 {
     public static final String DATA = "DATA";
-    public static final String LOCATION_BROADCAST = "com.greensea.pgs.communication.LOCATION_BROADCAST";
-    public static final String START_SERVICE = "com.greensea.pgs.communication.START_SERVICE";
+    public static final String LOCATION_BROADCAST = "fr.dijkman.pgs.communication.LOCATION_BROADCAST";
+    public static final String START_SERVICE = "fr.dijkman.pgs.communication.START_SERVICE";
 }
